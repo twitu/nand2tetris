@@ -1,0 +1,67 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/01/Mux16.hdl
+
+/**
+ * 16-bit multiplexor: 
+ * for i = 0..15 out[i] = a[i] if sel == 0 
+ *                        b[i] if sel == 1
+ */
+
+CHIP Mux16 {
+    IN a[16], b[16], sel;
+    OUT out[16];
+
+    PARTS:
+    // Put your code here:
+    Not(in=sel, out=selbar);
+    And(a=selbar, b=a[0], out=x0);
+    And(a=sel, b=b[0], out=y0);
+    Or(a=x0, b=y0, out=out[0]);
+    And(a=selbar, b=a[1], out=x1);
+    And(a=sel, b=b[1], out=y1);
+    Or(a=x1, b=y1, out=out[1]);
+    And(a=selbar, b=a[2], out=x2);
+    And(a=sel, b=b[2], out=y2);
+    Or(a=x2, b=y2, out=out[2]);
+    And(a=selbar, b=a[3], out=x3);
+    And(a=sel, b=b[3], out=y3);
+    Or(a=x3, b=y3, out=out[3]);
+    And(a=selbar, b=a[4], out=x4);
+    And(a=sel, b=b[4], out=y4);
+    Or(a=x4, b=y4, out=out[4]);
+    And(a=selbar, b=a[5], out=x5);
+    And(a=sel, b=b[5], out=y5);
+    Or(a=x5, b=y5, out=out[5]);
+    And(a=selbar, b=a[6], out=x6);
+    And(a=sel, b=b[6], out=y6);
+    Or(a=x6, b=y6, out=out[6]);
+    And(a=selbar, b=a[7], out=x7);
+    And(a=sel, b=b[7], out=y7);
+    Or(a=x7, b=y7, out=out[7]);
+    And(a=selbar, b=a[8], out=x8);
+    And(a=sel, b=b[8], out=y8);
+    Or(a=x8, b=y8, out=out[8]);
+    And(a=selbar, b=a[9], out=x9);
+    And(a=sel, b=b[9], out=y9);
+    Or(a=x9, b=y9, out=out[9]);
+    And(a=selbar, b=a[10], out=x10);
+    And(a=sel, b=b[10], out=y10);
+    Or(a=x10, b=y10, out=out[10]);
+    And(a=selbar, b=a[11], out=x11);
+    And(a=sel, b=b[11], out=y11);
+    Or(a=x11, b=y11, out=out[11]);
+    And(a=selbar, b=a[12], out=x12);
+    And(a=sel, b=b[12], out=y12);
+    Or(a=x12, b=y12, out=out[12]);
+    And(a=selbar, b=a[13], out=x13);
+    And(a=sel, b=b[13], out=y13);
+    Or(a=x13, b=y13, out=out[13]);
+    And(a=selbar, b=a[14], out=x14);
+    And(a=sel, b=b[14], out=y14);
+    Or(a=x14, b=y14, out=out[14]);
+    And(a=selbar, b=a[15], out=x15);
+    And(a=sel, b=b[15], out=y15);
+    Or(a=x15, b=y15, out=out[15]);
+}
