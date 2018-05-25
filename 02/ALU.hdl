@@ -43,4 +43,34 @@ CHIP ALU {
 
     PARTS:
    // Put you code here:
+   // xbar: Bitwise not of x array
+   Not16(in=x, out=xbar);
+
+   // zx=sel[1], nx=sel[0] using mux to manipulate value of x the order being zero then or in case of clash
+   Mux4Way16(a=x, b=xbar, c=false, d=true, sel[1]=zx, sel[0]=nx, out=xout);
+
+   // ybar: Bitwise not of y array
+   Not16(in=y, out=ybar);
+
+   // zy=sel[1], ny=sel[0] using mux to manipulate value of y the order being zero then or in case of clash
+   Mux4Way16(a=y, b=ybar, c=false, d=true, sel[1]=zy, sel[0]=ny, out=yout);
+
+   // xandy: Bitwise and of x and y
+   And16(a=xout, b=yout, out=xandy);
+
+   // fulladd: 16 bit addition of x and y arrays
+   Add16(a=xout, b=yout, out=fulladd);
+
+   // out1: Compute using f flag
+   Mux16(a=xandy, b=fulladd, sel=f, out=out1);
+
+   // out: Bitwise not of out1 depending on no
+   Not16(in=out1, out=out1bar);
+   Mux16(a=out1, b=out1bar, sel=no, out=out, out[15]=ng, out[0..7]=outpart0, out[8..15]=outpart1);
+
+   // calculating flag values
+   Or8Way(in=outpart0, out=outtemp0);
+   Or8Way(in=outpart1, out=outtemp1);
+   Or(a=outtemp0, b=outtemp1, out=zrbar);
+   Not(in=zrbar, out=zr);
 }
