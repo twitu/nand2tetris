@@ -12,3 +12,61 @@
 // the screen should remain fully clear as long as no key is pressed.
 
 // Put your code here.
+
+// Check keyboard for input
+@8191
+D=A
+@POINTER
+M=D
+(CHECK)
+	@KBD
+	D=M
+	@CHECKBLACK
+	D;JNE
+// Check if screen is already white
+	@SCREEN
+	D=M
+// If white go back to check
+	@CHECK
+	D;JEQ
+// Else make screen white
+(LOOPWHITE)
+	@POINTER
+	D=M
+	@REINIT
+	D;JLT
+	@SCREEN
+	A=A+D
+	M=0
+	@POINTER
+	M=D-1
+	@LOOPWHITE
+	0;JMP
+(CHECKBLACK)
+// Check if screen is already black
+	@SCREEN
+	D=M
+	D=D+1
+// If black go back to check
+	@CHECK
+	D;JEQ
+// Else make screen black
+(LOOPBLACK)
+	@POINTER
+	D=M
+	@REINIT
+	D;JLT
+	@SCREEN
+	A=A+D
+	M=-1
+	@POINTER
+	M=D-1
+	@LOOPBLACK
+	0;JMP
+(REINIT)
+	@8191
+	D=A
+	@POINTER
+	M=D
+	@CHECK
+	0;JMP
