@@ -40,4 +40,40 @@ CHIP CPU {
 
     PARTS:
     // Put your code here:
+    // decoding A and C instruction, along with NOP instruction which is 0b0000000000000000
+    Mux16(a=false, b=instruction, sel=instruction[15], out[0]=j0, out[1]=j1, out[2]=j2, out[3]=destm, out[4]=destd, out[5]=desta, out[6]=c6, out[7]=c5, out[8]=c4, out[9]=c3, out[10]=c2, out[11]=c1, out[12]=selectam);
+
+    // decoding for register A
+    Mux4Way16(a=instruction, b=instruction, c=outa, d=aluoutput, sel[1]=instruction[15], sel[0]=desta, out=inputa);
+    ARegister(in=inputa, load=true, out=outa, out[0..14]=addressM);
+
+    // decoding for register D
+    DRegister(in=aluoutput, load=destd, out=outd);
+
+    // decoding for register PC
+    PC(in=outa, load=jumpselect, reset=reset, inc=true, out[0..14]=pc);
+
+    // decoding input to ALU
+    Mux16(a=outa, b=inM, sel=selectam, out=otherinput);
+    ALU(x=outd, y=otherinput, zx=c1, nx=c2, zy=c3, ny=c4, f=c5, no=c6, 
+    out=aluoutput, out=outM, zr=zero, ng=notgt);
+
+    // decoding output flags, zero=jeq, notgt=jlt by definition
+    Or(a=zero, b=notgt, out=jle);
+    Not(in=zero, out=jne);
+    Not(in=jle, out=jgt);
+    Not(in=notgt, out=jge);
+
+    // decoding jump statement
+    // equivalent representation: Mux8(a=false, b=jgt, c=zero, d=jge, e=notgt, f=jne, g=jle, h=true, sel[0..2]=jump[0..2], sel[3]=false, out=jumpselect);
+    Mux(a=false, b=notgt, sel=j2, out=out0);
+    Mux(a=jgt, b=jne, sel=j2, out=out1);
+    Mux(a=zero, b=jle, sel=j2, out=out2);
+    Mux(a=jge, b=true, sel=j2, out=out3);
+    Mux(a=out0, b=out2, sel=j1, out=out4);
+    Mux(a=out1, b=out3, sel=j1, out=out5);
+    Mux(a=out4, b=out5, sel=j0, out=jumpselect);
+
+    // writing to memory
+    And(a=destm, b=true, out=writeM);
 }
