@@ -1,11 +1,22 @@
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.HashMap;
 import java.util.Scanner;
 
 public class Parser {
     private Scanner in;
     private String command;
     private String[] split;
+    private static final HashMap<String, String> memorymapping = new HashMap<>();
+
+    // maps vm memory calls to registers implemented in memory
+    // pointer, temp, static are virtual hence are implemented in CodeWriter
+    static {
+        memorymapping.put("argument", "ARG");
+        memorymapping.put("local" , "LCL");
+        memorymapping.put("this", "THIS");
+        memorymapping.put("that", "THAT");
+    }
 
     public static final int C_ARITHMETIC = 0;
     public static final int C_PUSH = 1;
@@ -28,8 +39,18 @@ public class Parser {
                 if (command.indexOf('/')!=-1) {
                     command = command.substring(0, command.indexOf('/'));
                 }
+
+                // remove any extra spaces and split into parts
                 command = command.trim();
                 split = command.split(" ");
+                for (int i=0; i<split.length; i++) {
+                    split[i] = split[i].trim();
+                }
+
+                // map to predefined virtual register if possible
+                if (split.length > 1 && memorymapping.containsKey(split[1])) {
+                    split[1] = memorymapping.get(split[1]);
+                }
                 return true;
             }
         }
