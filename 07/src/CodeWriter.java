@@ -1,7 +1,6 @@
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.HashMap;
 
 public class CodeWriter {
     private FileWriter fout;
@@ -9,11 +8,12 @@ public class CodeWriter {
     private String fileName;
     private int count;
     private int staticCount;
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
-    public CodeWriter(String filename) throws IOException{
-        fileName = filename;
-        fout = new FileWriter(new File(filename.substring(0, filename.indexOf(".vm")) + ".asm"));
+    public CodeWriter(String filepath) throws IOException{
+        // extract filename from path
+        fileName = filepath.substring(filepath.lastIndexOf("/")+1, filepath.lastIndexOf("."));
+        fout = new FileWriter(new File(filepath.substring(0, filepath.indexOf(".vm")) + ".asm"));
         count = 0;
         staticCount = 0;
         // initializing stack pointer not required as initialization done in test code
@@ -155,15 +155,11 @@ public class CodeWriter {
                         assemblyCommand.append("@").append(arg1).append("\n");
                         assemblyCommand.append("D=M\n");
                         assemblyCommand.append("@").append(arg2).append("\n");
-                        assemblyCommand.append("D=D+A\n");
-                        assemblyCommand.append("@R13\n"); // calculate and store address in RAM[13]
-                        assemblyCommand.append("M=D\n");
+                        assemblyCommand.append("A=D+A\n");
+                        assemblyCommand.append("D=M\n"); // store value of RAM[base+offset] in D
                         assemblyCommand.append("@SP\n");
                         assemblyCommand.append("A=M\n");
-                        assemblyCommand.append("D=M\n");
-                        assemblyCommand.append("@R13\n");
-                        assemblyCommand.append("A=M\n");
-                        assemblyCommand.append("M=D\n");
+                        assemblyCommand.append("M=D\n"); // write value from D into stack
                         assemblyCommand.append("@SP\n");
                         assemblyCommand.append("M=M+1\n");
             }
