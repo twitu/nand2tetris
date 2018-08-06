@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.HashMap;
@@ -6,6 +7,7 @@ import java.util.Scanner;
 public class Parser {
     private Scanner in;
     private String[] split;
+    private String command; // Instance variable for debugging purposes
     private static final HashMap<String, String> memorymapping = new HashMap<>();
 
     // maps vm memory calls to registers implemented in memory
@@ -27,13 +29,13 @@ public class Parser {
     public static final int C_RETURN = 7;
     public static final int C_CALL = 8;
 
-    public Parser(String filename) throws FileNotFoundException{
+    public Parser(File filename) throws FileNotFoundException{
         in = new Scanner(new FileInputStream(filename));
     }
 
     public boolean advance() {
         while (in.hasNextLine()) {
-            String command = in.nextLine();
+            command = in.nextLine();
             if (!command.equals("") && command.charAt(0)!='/') {
                 if (command.indexOf('/')!=-1) {
                     command = command.substring(0, command.indexOf('/'));

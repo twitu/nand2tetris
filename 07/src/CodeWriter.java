@@ -25,10 +25,10 @@ public class CodeWriter {
         assemblyCommand.append("(END)\n@END\n0;JMP\n");
         // the boolean operations assign true else jump to false subroutine
         // using register R13 to store return address to main routine
-        assemblyCommand.append("(EQUAL)\n@SP\nA=M\nD=M\n@FALSE\nD;JNE\n@SP\nA=M\nM=-1\n@R13\nA=M\n0;JMP\n");
-        assemblyCommand.append("(GREATER)\n@SP\nA=M\nD=M\n@FALSE\nD;JLE\n@SP\nA=M\nM=-1\n@R13\nA=M\n0;JMP\n");
-        assemblyCommand.append("(LESS)\n@SP\nA=M\nD=M\n@FALSE\nD;JGE\n@SP\nA=M\nM=-1\n@R13\nA=M\n0;JMP\n");
-        assemblyCommand.append("(FALSE)\n@SP\nA=M\nM=0\n@R13\nA=M\n0;JMP\n");
+        assemblyCommand.append("(EQUAL)\n@SP\nA=M-1\nD=M\n@FALSE\nD;JNE\n@SP\nA=M-1\nM=-1\n@R13\nA=M\n0;JMP\n");
+        assemblyCommand.append("(GREATER)\n@SP\nA=M-1\nD=M\n@FALSE\nD;JLE\n@SP\nA=M-1\nM=-1\n@R13\nA=M\n0;JMP\n");
+        assemblyCommand.append("(LESS)\n@SP\nA=M-1\nD=M\n@FALSE\nD;JGE\n@SP\nA=M-1\nM=-1\n@R13\nA=M\n0;JMP\n");
+        assemblyCommand.append("(FALSE)\n@SP\nA=M-1\nM=0\n@R13\nA=M\n0;JMP\n");
         fout.write(assemblyCommand.toString());
         fout.close();
     }
@@ -48,7 +48,7 @@ public class CodeWriter {
             assemblyCommand.append("AM=M-1\n");
             assemblyCommand.append("D=M\n");
             assemblyCommand.append("@SP\n");
-            assemblyCommand.append("AM=M-1\n");
+            assemblyCommand.append("A=M-1\n"); // note tricky implementation to avoid incrementing value later
             if (arg1.equals("add")) assemblyCommand.append("M=M+D\n");
             else if (arg1.equals("and")) assemblyCommand.append("M=M&D\n");
             else if (arg1.equals("or")) assemblyCommand.append("M=M|D\n");
@@ -65,9 +65,7 @@ public class CodeWriter {
                     assemblyCommand.append("(RETURNHERE").append(count++).append(")").append("\n");
                 }
             }
-            // incrementing stack pointer after code for all possible operations are done
-            assemblyCommand.append("@SP\n");
-            assemblyCommand.append("M=M+1\n");
+            // incrementing stack pointer not required as it is already ahead of stored value
         }
         fout.write(assemblyCommand.toString());
     }
