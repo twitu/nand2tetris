@@ -2,7 +2,8 @@ import os
 
 
 class JackTokenizer:
-    __slots__ = '_filepath', '_token', '_filecontent', '_cursor', '_return_token'
+    __slots__ = '_filepath', '_token', '_filecontent', '_cursor', '_return_token',\
+                '_prev_token', '_prev_cursor'
 
     KEYWORD_TOKEN = 0
     SYMBOL_TOKEN = 1
@@ -17,13 +18,15 @@ class JackTokenizer:
     symbols = {'{', '}', '(', ')', '[', ']', '.', ',', ';', '+', '-', '*',
                '/', '&', ',', '<', '>', '=', '~', '|'}
     whitespace = {'\n', '\t', '', ' '}
-    tokentypes = ["keyword", "symbol", "identifier", "integerConstant", "stringConstant"]
+    token_literal_name = ["keyword", "symbol", "identifier", "integerConstant", "stringConstant"]
     special_xml = {'<': "&lt;", '>': "&gt;", '\"': "&quot;", '&': "&amp;"}
 
     def __init__(self, filepath):
         self._filepath = filepath
         self._token = None
+        self._prev_token = None
         self._cursor = 0
+        self._prev_cursor = 0
         self._return_token = [
             self.keyword,
             self.symbol,
@@ -44,6 +47,7 @@ class JackTokenizer:
         while self._cursor < len(self._filecontent):
             character = self._filecontent[self._cursor]
             words = []
+            self._prev_cursor = self._cursor
 
             if character == '/':  # ignore comments
                 self._cursor += 1
@@ -58,6 +62,7 @@ class JackTokenizer:
                     while self._filecontent[self._cursor] != '\n':
                         self._cursor += 1
                 else:  # special case because '/' is also a symbol
+                    self._prev_token = self._token
                     self._token = character
                     return self._token
             elif character == '\"':  # check for " to tokenize strings without the double quotes
@@ -70,10 +75,12 @@ class JackTokenizer:
                     else:
                         words.append('\"')
                         self._cursor += 1
+                        self._prev_token = self._token
                         self._token = ''.join(words)
                         return self._token
             elif character in JackTokenizer.symbols:  # check if character is a symbol tokenize it
                 self._cursor += 1
+                self._prev_token = self._token
                 self._token = character
                 return self._token
             elif character in JackTokenizer.whitespace:  # ignore white space
@@ -87,6 +94,7 @@ class JackTokenizer:
                         words.append(letters)
                     else:
                         # do not increment cursor since it is already pointing to next letter after token
+                        self._prev_token = self._token
                         self._token = ''.join(words)
                         return self._token
 
@@ -95,6 +103,11 @@ class JackTokenizer:
         # return None when iterated over file contents
         self._token = None
         return self._token
+
+    def go_back(self):
+        # should not be called twice consecutively
+        self._token = self._prev_token
+        self._cursor = self._prev_cursor
 
     def token_type(self):
         # return type of token
@@ -149,7 +162,7 @@ def tokenize(inputpath):
     tokenized_xml = ["<tokens>"]
 
     while tokenizer.advance():
-        type_of_token = JackTokenizer.tokentypes[tokenizer.token_type()]
+        type_of_token = JackTokenizer.token_literal_name[tokenizer.token_type()]
         token = tokenizer.return_token_value()
 
         tokenized_xml.append("<{}> {} </{}>".format(type_of_token, token, type_of_token))
