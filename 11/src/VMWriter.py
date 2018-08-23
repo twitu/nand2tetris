@@ -26,6 +26,10 @@ class VMWriter:
         vm = "goto {}\n".format(label)
         self.write(vm)
 
+    def write_if(self, label):
+        vm = "if-goto {}".format(label)
+        self.write(vm)
+
     def write_call(self, name, nargs):
         vm = "call {} {}\n".format(name, nargs)
         self.write(vm)
@@ -36,3 +40,5 @@ class VMWriter:
         for i in range(nlocals):
             self.write_push("local", i)
 
+    def write_return(self):
+        self.write("return;")

@@ -5,16 +5,14 @@ from JackTokenizer import JackTokenizer
 
 
 class CompilationEngine:
-    __slots__ = '_tokenizer', '_output_stream', '_xml_output', '_indentation', \
+    __slots__ = '_tokenizer', '_xml_output', '_indentation', \
                 '_keyword_compile_function_dict', '_statement_compile_function_dict'
 
     string_format_terminal = "<{}> {} </{}>"
 
-    def __init__(self, tokenizer, outputstream):
+    def __init__(self, tokenizer):
         self._tokenizer = tokenizer
-        self._output_stream = outputstream
         self._xml_output = []
-        self._indentation = 0
         self._keyword_compile_function_dict = {
             "class": self.compile_class,
             "static": self.compile_var_dec,
@@ -257,11 +255,6 @@ class CompilationEngine:
         self._xml_output.append(' ' * self._indentation + "</expressionList>")
         if close:
             self._xml_output.append(close)
-
-    def write_to_file(self):
-        with open(self._output_stream, 'w') as output:
-            output.write('\n'.join(self._xml_output))
-            output.write('\n')
 
 
 if __name__ == '__main__':
