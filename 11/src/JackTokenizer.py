@@ -3,7 +3,7 @@ import os
 
 class JackTokenizer:
     __slots__ = '_filepath', '_token', '_filecontent', '_cursor', '_return_token',\
-                '_prev_token', '_prev_cursor'
+                '_prev_token', '_prev_cursor', 'line_number'
 
     KEYWORD_TOKEN = 0
     SYMBOL_TOKEN = 1
@@ -27,6 +27,7 @@ class JackTokenizer:
         self._prev_token = None
         self._cursor = 0
         self._prev_cursor = 0
+        self.line_number = 0
         self._return_token = [
             self.keyword,
             self.symbol,
@@ -56,9 +57,12 @@ class JackTokenizer:
                     self._cursor += 1
                     while not (self._filecontent[self._cursor] == '*' and self._filecontent[self._cursor + 1] == '/'):
                         self._cursor += 1
+                        if self._filecontent[self._cursor] == '\n':
+                            self.line_number += 1
                     self._cursor += 1
                 elif next_character == '/':  # the other possible character is /
                     self._cursor += 1
+                    self.line_number += 1
                     while self._filecontent[self._cursor] != '\n':
                         self._cursor += 1
                 else:  # special case because '/' is also a symbol
@@ -84,7 +88,8 @@ class JackTokenizer:
                 self._token = character
                 return self._token
             elif character in JackTokenizer.whitespace:  # ignore white space
-                pass
+                if character == '\n':
+                    self.line_number += 1
             else:  # tokenize keyword integer or identifier
                 words = [character]
                 while self._cursor < len(self._filecontent):
