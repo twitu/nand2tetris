@@ -10,7 +10,7 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
 
     def __init__(self, input_path):
         self._tokenizer = JackTokenizer(input_path)
-        self._vm_writer = VMWriter(input_path.replace(".jack", ".vm"))
+        self._vm_writer = VMWriter(input_path.replace(".jack", "Compiled.vm"))
         self._symbol_table = SymbolTable()
         self.class_name = ""
         self.label_value = 1
@@ -20,7 +20,7 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
         # advances and prints terminals until it encounters termination character
         # also can specify number of tokens to print
         # by default it will keep tokenizing until terminating character
-        while count != 0 and self._tokenizer.advance():
+        while count != 0 and self._tokenizer.next():
             token_type = self._tokenizer.token_literal_name[self._tokenizer.token_type()]
             token = self._tokenizer.return_token_value()
             count -= 1
@@ -32,12 +32,13 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
     def compile_class(self):
         self.advance(terminate_token_type=("identifier",))
         self.class_name = self._tokenizer.return_token_value()
-        while self._tokenizer.advance() and self._tokenizer.return_token_value() in ["static", "field"]:
+        self._tokenizer.next()  # skip opening bracket "{"
+        while self._tokenizer.next() and self._tokenizer.return_token_value() in ["static", "field"]:
             self.class_compile_var_dec()
         else:
             self._tokenizer.go_back()
 
-        while self._tokenizer.advance() and self._tokenizer.return_token_value() in \
+        while self._tokenizer.next() and self._tokenizer.return_token_value() in \
                 ["constructor", "function", "method"]:
             self.compile_subroutine()
         else:
@@ -49,10 +50,10 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
     def class_compile_var_dec(self):
         var_kind = self._tokenizer.return_token_value()
 
-        if self._tokenizer.advance() and self._tokenizer.token_type() == JackTokenizer.KEYWORD_TOKEN:
+        if self._tokenizer.next() and self._tokenizer.token_type() == JackTokenizer.KEYWORD_TOKEN:
             var_type = self._tokenizer.return_token_value()
 
-            while self._tokenizer.advance() and self._tokenizer.return_token_value() != ";":
+            while self._tokenizer.next() and self._tokenizer.return_token_value() != ";":
                 if self._tokenizer.token_type() == JackTokenizer.IDENTIFIER_TOKEN:
                     var_name = self._tokenizer.return_token_value()
                     self._symbol_table.define(var_name, var_type, var_kind)
@@ -61,49 +62,72 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
         self._symbol_table.start_subroutine()
         subroutine_type = self._tokenizer.return_token_value()
 
-        if subroutine_type == "method":
-            self._symbol_table.define("this", self.class_name, VMWriter.ARG_SEGMENT)  # this is a dummy written to make arg point to 1
-            self._vm_writer.write_push(VMWriter.ARG_SEGMENT, 0)  # implicit this pointer
-            self._vm_writer.write_pop(VMWriter.POINTER_SEGMENT, 0)  # write to this of current scope
-
         # skip tokens till parameter call declaration
-        while self._tokenizer.advance() and self._tokenizer.return_token_value() != "(":
-            pass
-        self.compile_parameter_list()  # declare parameters, can be empty
+        self._tokenizer.next()  # skip return type
+        if self._tokenizer.next():
+            subroutine_name = self._tokenizer.return_token_value()
+        else:
+            self.error("subroutine declaration")
+
+        if subroutine_type == "method":
+            self._symbol_table.define("this", self.class_name,
+                                      VMWriter.ARG_SEGMENT)  # this is a dummy written to store "this" in arg 0
+
+        if self._tokenizer.next() and self._tokenizer.return_token_value() == "(":
+            self.compile_parameter_list()
+
+        if self._tokenizer.next() and self._tokenizer.return_token_value() == "{":  # enter body
+            while self._tokenizer.next() and self._tokenizer.return_token_value() == "var":  # var declarations
+                self.class_compile_var_dec()
+
+        self._vm_writer.write_function(self.class_name + "." + subroutine_name, self._symbol_table.var_count("var"))
 
         if subroutine_type == "constructor":
             self._vm_writer.write_push(VMWriter.CONST_SEGMENT, self._symbol_table.var_count("field"))
             self._vm_writer.write_call("Memory.alloc", 1)
             self._vm_writer.write_pop(VMWriter.POINTER_SEGMENT, 0)
+            for i in range(self._symbol_table.var_count("arg")):
+                self._vm_writer.write_push(VMWriter.ARG_SEGMENT, i)
+                self._vm_writer.write_pop(VMWriter.THIS_SEGMENT, i)
 
-        if self._tokenizer.advance() and self._tokenizer.return_token_value() == "{":  # enter body
-            while self._tokenizer.advance() and self._tokenizer.return_token_value() == "var":  # var declarations
-                self.class_compile_var_dec()
+        if subroutine_type == "method":
+            self._vm_writer.write_push(VMWriter.ARG_SEGMENT, 0)  # implicit this pointer
+            self._vm_writer.write_pop(VMWriter.POINTER_SEGMENT, 0)  # write to this of current scope
+            for i in range (1, self._symbol_table.var_count("arg")):
+                self._vm_writer.write_push(VMWriter.ARG_SEGMENT, i)
+                self._vm_writer.write_pop(VMWriter.THIS_SEGMENT, i - 1)
 
-            self.compile_statements()
-            if self._tokenizer.return_token_value() != "}":
-                self.error("subroutine statements closing bracket")
+        self.compile_statements()
+        if self._tokenizer.return_token_value() != "}":
+            self.error("subroutine statements closing bracket")
         else:
             self.error("subroutine statements")
 
     def compile_parameter_list(self):
-        while self._tokenizer.advance() and self._tokenizer.return_token_value() != ")":  # skips "," if not ")"
-            type = self._tokenizer.advance()
-            name = self._tokenizer.advance()
-            self._symbol_table.define(name, type, VMWriter.ARG_SEGMENT)
+        while True:
+            type = self._tokenizer.next()
+            name = self._tokenizer.next()
+            self._symbol_table.define(name, type, "arg")
+            delimiter = self._tokenizer.next()
+            if delimiter == ",":
+                continue
+            elif delimiter == ")":
+                return
+            else:
+                self.error("subroutine parameter")
 
     def compile_subroutine_call(self, name=None):
         if not name:
-            if self._tokenizer.advance() and self._tokenizer.token_type() == JackTokenizer.IDENTIFIER_TOKEN:
+            if self._tokenizer.next() and self._tokenizer.token_type() == JackTokenizer.IDENTIFIER_TOKEN:
                 name = self._tokenizer.return_token_value()
-                self._tokenizer.advance()
+                self._tokenizer.next()
 
         # at this point tokenizer points to token after subroutine name that could be "(" or "."
         if self._tokenizer.return_token_value() == ".":
             caller = name
-            if self._tokenizer.advance():
+            if self._tokenizer.next():
                 name = self._tokenizer.return_token_value()
-                self._tokenizer.advance()
+                self._tokenizer.next()
 
             kind = self._symbol_table.kind_of(caller)
             if kind is None:  # function call of the form Math.multiply()
@@ -125,7 +149,8 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
         self._vm_writer.write_call(name, args)
 
     def compile_statements(self):
-        while self._tokenizer.advance() and self._tokenizer.return_token_value() != "}":
+        self._tokenizer.go_back()
+        while self._tokenizer.next() and self._tokenizer.return_token_value() != "}":
             token_value = self._tokenizer.return_token_value()
             if token_value == "let":
                 self.compile_let()
@@ -141,7 +166,7 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
                 self.error("statements not defined properly")
 
     def compile_return(self):
-        if self._tokenizer.advance() and self._tokenizer.return_token_value() != ";":
+        if self._tokenizer.next() and self._tokenizer.return_token_value() != ";":
             self._vm_writer.write_push(VMWriter.CONST_SEGMENT, 0)  # void functions should return 0
         else:
             self.compile_expression()
@@ -150,20 +175,20 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
     def compile_do(self):
         self.compile_subroutine_call()
         self._vm_writer.write_pop(VMWriter.TEMP_SEGMENT, 0)  # discard popped value
-        if self._tokenizer.advance() and self._tokenizer.return_token_value() == ";":
+        if self._tokenizer.next() and self._tokenizer.return_token_value() == ";":
             pass
         else:
             self.error("incorrect do statement")
 
     def compile_while(self):
-        if self._tokenizer.advance() and self._tokenizer.return_token_value() == "(":
+        if self._tokenizer.next() and self._tokenizer.return_token_value() == "(":
             self._vm_writer.write_label(self.label_value)
             self.compile_expression()
             self._vm_writer.write_if(self.label_value + 1)
         else:
             self.error("while statement")
 
-        if self._tokenizer.advance() and self._tokenizer.return_token_value() == "{":
+        if self._tokenizer.next() and self._tokenizer.return_token_value() == "{":
             self.compile_statements()
             self._vm_writer.write_goto(self.label_value)
         else:
@@ -172,16 +197,16 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
         self.label_value += 2
 
     def compile_if(self):
-        if self._tokenizer.advance() and self._tokenizer.return_token_value() == "(":
+        if self._tokenizer.next() and self._tokenizer.return_token_value() == "(":
             self.compile_expression()
         self._vm_writer.write_if(self.label_value)
 
-        if self._tokenizer.advance() and self._tokenizer.return_token_value() == "{":
+        if self._tokenizer.next() and self._tokenizer.return_token_value() == "{":
             self._vm_writer.write_goto(self.label_value + 1)
             self.compile_statements()  # else statements
 
-        if self._tokenizer.advance() and self._tokenizer.return_token_value() == "else":
-            if self._tokenizer.advance() and self._tokenizer.return_token_value() == "{":
+        if self._tokenizer.next() and self._tokenizer.return_token_value() == "else":
+            if self._tokenizer.next() and self._tokenizer.return_token_value() == "{":
                 self._vm_writer.write_label(self.label_value)
                 self.compile_statements()  # if statements
                 self._vm_writer.write_label(self.label_value + 1)  # skip over if when false statements
@@ -194,12 +219,12 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
         self.label_value += 2
 
     def compile_let(self):
-        if self._tokenizer.advance() and self._tokenizer.token_type() == JackTokenizer.IDENTIFIER_TOKEN:
+        if self._tokenizer.next() and self._tokenizer.token_type() == JackTokenizer.IDENTIFIER_TOKEN:
             name = self._tokenizer.return_token_value()
             index, kind = self._symbol_table.index_of(name), self._symbol_table.kind_of(name)
             array_access = False
 
-            if self._tokenizer.advance() and self._tokenizer.return_token_value() == "[":
+            if self._tokenizer.next() and self._tokenizer.return_token_value() == "[":
                 if index and kind:
                     if kind == "field":
                         self._vm_writer.write_push(VMWriter.THIS_SEGMENT, index)
@@ -210,8 +235,11 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
                 self.compile_expression()  # evaluated expression value at SP
                 self._vm_writer.write_arithmetic("add")  # SP contains memory address array + base
                 array_access = True
+            else:
+                self._tokenizer.go_back()
 
-            if self._tokenizer.advance() and self._tokenizer.return_token_value() == "=":
+            if self._tokenizer.next() and self._tokenizer.return_token_value() == "=":
+                self._tokenizer.next()
                 self.compile_expression()
 
                 # evaluate expression and then pop value to variable on right side of assignment
@@ -221,7 +249,7 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
                     self._vm_writer.write_push(VMWriter.TEMP_SEGMENT, 0)  # re insert expression value on stack
                     self._vm_writer.write_pop(VMWriter.THAT_SEGMENT, 0)  # pop expression value to array index
                 else:
-                    if index and kind:
+                    if kind:  # index can be 0, so check only kind
                         self._vm_writer.write_pop(kind, index)
                     else:
                         self.error("variable not declared properly")
@@ -229,7 +257,7 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
             self.error("variable not declared properly")
 
     def compile_expression_list(self):
-        if self._tokenizer.advance() and self._tokenizer.return_token_value() == ")":
+        if self._tokenizer.next() and self._tokenizer.return_token_value() == ")":
             return 0
         else:
             self._tokenizer.go_back()
@@ -249,7 +277,7 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
     def compile_expression(self):
         self.compile_term()
 
-        while self._tokenizer.advance():
+        while self._tokenizer.next():
             token_type = self._tokenizer.token_type()
             token_value = self._tokenizer.return_token_value()
             if token_value in [")", "]", ",", ";"]:  # expression termination characters
@@ -258,17 +286,17 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
             if token_type == JackTokenizer.SYMBOL_TOKEN:  # compile op term and then compile term
                 op = self._tokenizer.return_token_value()
                 if op == "/":
-                    if self._tokenizer.advance(): self.compile_term()
+                    if self._tokenizer.next(): self.compile_term()
                     self._vm_writer.write_call("Math.divide()", 2)
                 elif op == "*":
-                    if self._tokenizer.advance(): self.compile_term()
+                    if self._tokenizer.next(): self.compile_term()
                     self._vm_writer.write_call("Math.multiply()", 2)
                 else:
                     self._vm_writer.write_arithmetic(op)
             else:
                 self.error("OP missing")
 
-            if self._tokenizer.advance(): self.compile_term()
+            if self._tokenizer.next(): self.compile_term()
 
     def compile_term(self):
         token_type = self._tokenizer.token_type()
@@ -280,7 +308,7 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
         elif token_type == JackTokenizer.KEYWORD_TOKEN:  # only true, false, null and this
             self.compile_keyword()
         elif token_type == JackTokenizer.IDENTIFIER_TOKEN:  # subroutine or variables
-            if self._tokenizer.advance() and self._tokenizer.return_token_value() in ["(", "."]:
+            if self._tokenizer.next() and self._tokenizer.return_token_value() in ["(", "."]:
                 self.compile_subroutine_call(token_value)
             else:
                 self.compile_var_name(token_value)
@@ -322,13 +350,13 @@ class JackCompiler:  # TODO: handle constructor inside constructor, get rid of a
 
     def compile_var_name(self, name=None):
         if not name:
-            if self._tokenizer.advance():
+            if self._tokenizer.next():
                 name = self._tokenizer.return_token_value()
             else:
                 self.error("variable not declared properly")
 
         index, kind = self._symbol_table.index_of(name), self._symbol_table.kind_of(name)
-        if index and kind:
+        if kind:  # index can be 0, so checking kind if symbol exists
             if kind == "field":
                 self._vm_writer.write_push(VMWriter.THIS_SEGMENT, index)
             else:

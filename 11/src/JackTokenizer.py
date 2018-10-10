@@ -41,7 +41,7 @@ class JackTokenizer:
         except IOError:
             print("Please check given file path.")
 
-    def advance(self):
+    def next(self):
         # advances file cursor and tokenizes the next possible token
         # also identifies and stores token type
         # returns self._token to be used as a boolean value check
@@ -166,7 +166,7 @@ def tokenize(inputpath):
     outputfile = inputpath.replace(".jack", "Tokenized.xml")
     tokenized_xml = ["<tokens>"]
 
-    while tokenizer.advance():
+    while tokenizer.next():
         type_of_token = JackTokenizer.token_literal_name[tokenizer.token_type()]
         token = tokenizer.return_token_value()
 

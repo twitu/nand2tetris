@@ -5,7 +5,8 @@ class VMWriter:
     THAT_SEGMENT = "that"
     THIS_SEGMENT = "this"
     TEMP_SEGMENT = "temp"
-    ARG_SEGMENT = "arg"
+    ARG_SEGMENT = "argument"
+    LOCAL_SEGMENT = "local"
 
     def __init__(self, output_stream):
         self._output_stream = output_stream
@@ -58,5 +59,5 @@ class VMWriter:
         for i in range(nlocals):
             self.write_push("local", i)
 
-    def write_return(self, value=0):
-        self.write("return {}\n".format(value))
+    def write_return(self):
+        self.write("return\n")

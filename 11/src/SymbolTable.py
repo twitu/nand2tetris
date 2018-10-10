@@ -2,14 +2,14 @@ class SymbolTable:
 
     class _Symbol:  # light weight symbol class
 
-        __slots__ = '_type', '_kind', '_id'
+        __slots__ = 'type', 'kind', 'id'
 
         # kind is type of variable the compiler interprets it: static, field, var, arg
         # type is class/type does variable belong to like int, char, boolean or Class
         def __init__(self, type, kind, id):
-            self._type = type
-            self._kind = kind
-            self._id = id
+            self.type = type
+            self.kind = kind
+            self.id = id
 
     def __init__(self):
         self._counters = {
@@ -37,18 +37,28 @@ class SymbolTable:
         return self._counters[kind]
 
     def kind_of(self, name):
-        kind_value = self._method_scope.get(name, default=None)
+        kind_value = self._method_scope.get(name, None)
         if not kind_value:
-            kind_value = self._class_scope.get(name, default=None)
+            kind_value = self._class_scope.get(name, None)
 
         if kind_value:
-            return kind_value._kind
+            return kind_value.kind
+        else:
+            return None
+
+    def type_of(self, name):
+        kind_value = self._method_scope.get(name, None)
+        if not kind_value:
+            kind_value = self._class_scope.get(name, None)
+
+        if kind_value:
+            return kind_value.type
         else:
             return None
 
     def index_of(self, name):
-        index = self._method_scope.get(name, default=None)
+        index = self._method_scope.get(name, None)
         if not index:
-            index = self._class_scope.get(name, default=None)
+            index = self._class_scope.get(name, None)
 
-        return index._id - 1
+        return index._id
