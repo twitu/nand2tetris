@@ -15,7 +15,7 @@ class SymbolTable:
         self._counters = {
             "static": 0,
             "field": 0,
-            "arg": 0,
+            "argument": 0,
             "var": 0,
         }
         self._class_scope = {}
@@ -23,7 +23,7 @@ class SymbolTable:
 
     def start_subroutine(self):
         self._method_scope = {}
-        self._counters["arg"] = 0
+        self._counters["argument"] = 0
         self._counters["var"] = 0
 
     def define(self, name, type, kind):
@@ -61,4 +61,7 @@ class SymbolTable:
         if not index:
             index = self._class_scope.get(name, None)
 
-        return index._id
+        if index:
+            return index.id
+        else:
+            return None

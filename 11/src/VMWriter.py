@@ -27,10 +27,18 @@ class VMWriter:
         self._output_file.write(vm_instruction)
 
     def write_push(self, segment, index):
+        if segment == "field":
+            segment = "this"
+        if segment == "var":
+            segment = "local"
         vm = "push {} {}\n".format(segment, index)
         self.write(vm)
 
     def write_pop(self, segment, index):
+        if segment == "field":
+            segment = "this"
+        if segment == "var":
+            segment = "local"
         vm = "pop {} {}\n".format(segment, index)
         self.write(vm)
 
@@ -56,8 +64,6 @@ class VMWriter:
     def write_function(self, name, nlocals):
         vm = "function {} {}\n".format(name, nlocals)
         self.write(vm)
-        for i in range(nlocals):
-            self.write_push("local", i)
 
     def write_return(self):
         self.write("return\n")
