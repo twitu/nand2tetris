@@ -8,20 +8,49 @@
  */
 class Sys {
 
+    // count required for delay of a millisecond, it is system specific
+    static int millicount;
+
     /** Performs all the initializations required by the OS. */
     function void init() {
+        do KeyBoard.init();
+        do Math.init();
+        do Memory.init();
+        do Output.init();
+        do String.init();
+        do Screen.init();
+        do Main.main(); // this will be contained in the application program
+        let millicount = 500;
+        return;
     }
 
     /** Halts the program execution. */
     function void halt() {
+        while (1) {}
+        return;
     }
 
     /** Waits approximately duration milliseconds and returns.  */
     function void wait(int duration) {
+        var int count;
+        while (duration > 0) {
+            let duration = duration - 1;
+            let count = millicount;
+            while (count > 0) {
+                let count = count - 1;
+            }
+        }
+        return;
     }
 
     /** Displays the given error code in the form "ERR<errorCode>",
      *  and halts the program's execution. */
     function void error(int errorCode) {
+        var String repr;
+        repr = String.new(7);
+        repr.setInt(errorCode);
+        do Output.printString("ERR ");
+        do Output.printString(repr);
+        return;
     }
 }

@@ -17,10 +17,16 @@
 class Output {
 
     // Character map for displaying characters
-    static Array charMaps; 
+    // cursor is an array of size 2, cursor[0] indicates row, cursor[1] indicates column
+    static Array charMaps, screen, cursor;
+    static int screenStart;
 
     /** Initializes the screen, and locates the cursor at the screen's top-left. */
     function void init() {
+        let cursor = Array.new(2);
+        let cursor[0] = 0;
+        let cursor[1] = 0;
+        let screenStart = 16384;
     }
 
     // Initializes the character map array
@@ -176,11 +182,16 @@ class Output {
     /** Moves the cursor to the j-th column of the i-th row,
      *  and erases the character displayed there. */
     function void moveCursor(int i, int j) {
+        let cursor[0] = i;
+        let cursor[1] = j;
+        return;
     }
 
     /** Displays the given character at the cursor location,
      *  and advances the cursor one column forward. */
     function void printChar(char c) {
+        var int rowCount, colCount, count;
+        let rowCount = cursor[]
     }
 
     /** displays the given string starting at the cursor location,

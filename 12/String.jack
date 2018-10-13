@@ -12,53 +12,95 @@
  */
 class String {
 
+    static Array string;
+
     /** constructs a new empty string with a maximum length of maxLength
      *  and initial length of 0. */
     constructor String new(int maxLength) {
+        let string = Array.new(maxLength + 2);  // two extra indices to store length and cursor
+        let string[0] = maxLength;
+        let string[1] = 0;
+        return string + 2;
     }
 
     /** Disposes this string. */
     method void dispose() {
+        let this = this - 2;
+        let this.dispose();
+        return;
     }
 
     /** Returns the current length of this string. */
     method int length() {
+        return this[-2];
     }
 
     /** Returns the character at the j-th location of this string. */
     method char charAt(int j) {
+        return this[j];
     }
 
     /** Sets the character at the j-th location of this string to c. */
     method void setCharAt(int j, char c) {
+        let this[j] = c;
+        return;
     }
 
     /** Appends c to this string's end and returns this string. */
     method String appendChar(char c) {
+        let this[this[-1]] = c;
+        let this[-1] = this[-1] + 1;
+        return;
     }
 
     /** Erases the last character from this string. */
     method void eraseLastChar() {
+        let this[-1] = this[-1] - 1;
+        let this[this[-1]] = 0;
+        return;
     }
 
-    /** Returns the integer value of this string, 
+    /** Returns the integer value of this string,
      *  until a non-digit character is detected. */
     method int intValue() {
+        var char digit;
+        var int pointer, length, sum;
+
+        let pointer = 0;
+        let sum = 0;
+        let length = this[-2];
+        let digit = this[pointer]
+        while ((pointer < length) & (digit > 47) & (digit < 58)) {
+            let sum = Math.multiply(sum, 10) + digit - 48;
+            let pointer = pointer + 1;
+        }
+
+        return sum;
     }
 
     /** Sets this string to hold a representation of the given value. */
     method void setInt(int val) {
+        if (val < 10) {
+            do this.appendChar(val + 48);
+        } else {
+            do this.setInt(Math.divide(val, 10));
+            do this.appendChar(val - Math.multiply(this.intValue(), 10));
+        }
+        return;
     }
 
     /** Returns the new line character. */
     function char newLine() {
+        return 128;
     }
 
     /** Returns the backspace character. */
     function char backSpace() {
+        return 129;
     }
 
     /** Returns the double quote (") character. */
     function char doubleQuote() {
+        return 34;
     }
 }

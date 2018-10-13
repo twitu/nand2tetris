@@ -11,21 +11,41 @@
  */
 class Screen {
 
+    static int screenStart, rows, columns, color, screenEnd;
+
     /** Initializes the Screen. */
     function void init() {
+        let screenAddress = 16384;
+        let rows = 512;
+        let cols = 256;
+        let screenEnd = Math.multiply(rows, cols) + screenAddress;
+        let color = true;
+        return;
     }
 
     /** Erases the entire screen. */
     function void clearScreen() {
+        var int pixel;
+
+        let color = true;
+        let pixel = screenStart;
+        while (pixel < screenEnd) {
+            do Memory.poke(pixel, color);
+            let pixel = pixel + 1;
+        }
     }
 
     /** Sets the current color, to be used for all subsequent drawXXX commands.
      *  Black is represented by true, white by false. */
     function void setColor(boolean b) {
+        let color = b;
+        return;
     }
 
     /** Draws the (x,y) pixel, using the current color. */
     function void drawPixel(int x, int y) {
+        do Memory.poke(Math.multiply(y, columns) + x + screenAddress, color);
+        return;
     }
 
     /** Draws a line from pixel (x1,y1) to pixel (x2,y2), using the current color. */
