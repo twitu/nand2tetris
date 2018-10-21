@@ -16,8 +16,8 @@ class Memory {
     function void init() {
         let RAM = 0; // allows random access to any memory value
         let freelist = 2048; // heap base address
-        freelist[0] = null; // next pointer
-        freelist[1] = 14334; // total heap space, 14K - 2
+        let freelist[0] = null; // next pointer
+        let freelist[1] = 14334; // total heap space, 14K - 2
         return;
     }
 
@@ -44,7 +44,7 @@ class Memory {
 
         if (node = 0) { // check if node is equal to null
             do Memory.deFrag();
-            node = freelist;
+            let node = freelist;
             while (node[1] < size & node > 0) { // check that node does not point to null
                 let node = node[0];
             }

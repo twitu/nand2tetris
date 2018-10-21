@@ -25,7 +25,13 @@ class Math {
 
     /** Returns the absolute value of x. */
     function int abs(int x) {
-
+        // check for negative number and convert
+        if ((x | powers[15]) = powers[15]) {
+            let x = !x;
+            let x = x + 1;
+        }
+        
+        return x;
     }
 
     /** Returns the product of x and y.
@@ -109,5 +115,9 @@ class Math {
         } else {
             return a;
         }
+    }
+
+    function Array pow_array() {
+        return powers;
     }
 }

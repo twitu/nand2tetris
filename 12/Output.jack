@@ -17,16 +17,16 @@
 class Output {
 
     // Character map for displaying characters
-    // cursor is an array of size 2, cursor[0] indicates row, cursor[1] indicates column
-    static Array charMaps, screen, cursor;
-    static int screenStart;
+    static Array charMaps, screen;
+    static int line_number, word_number;
+    static boolean odd;
 
     /** Initializes the screen, and locates the cursor at the screen's top-left. */
     function void init() {
-        let cursor = Array.new(2);
-        let cursor[0] = 0;
-        let cursor[1] = 0;
-        let screenStart = 16384;
+        let screen = 16384;
+        let word_number = 0;
+        let line_number = 0;
+        let odd = true;
     }
 
     // Initializes the character map array
@@ -77,7 +77,7 @@ class Output {
         do Output.create(64,30,51,51,59,59,59,27,3,30,0,0);  // @
         do Output.create(63,30,51,51,24,12,12,0,12,12,0,0);  // ?
 
-        do Output.create(65,0,0,0,0,0,0,0,0,0,0,0);          // A ** TO BE FILLED **
+        do Output.create(65,12,30,51,51,63,51,51,51,51,0,0);          // A ** TO BE FILLED **
         do Output.create(66,31,51,51,51,31,51,51,51,31,0,0); // B
         do Output.create(67,28,54,35,3,3,3,35,54,28,0,0);    // C
         do Output.create(68,15,27,51,51,51,51,51,27,15,0,0); // D
@@ -154,17 +154,18 @@ class Output {
 	let map = Array.new(11);
         let charMaps[index] = map;
 
-        let map[0] = a;
-        let map[1] = b;
-        let map[2] = c;
-        let map[3] = d;
-        let map[4] = e;
-        let map[5] = f;
-        let map[6] = g;
-        let map[7] = h;
-        let map[8] = i;
-        let map[9] = j;
-        let map[10] = k;
+        // fill the upper byte of word with same character
+        let map[0] = Math.multiply(a, 257);
+        let map[1] = Math.multiply(b, 257);
+        let map[2] = Math.multiply(c, 257);
+        let map[3] = Math.multiply(d, 257);
+        let map[4] = Math.multiply(e, 257);
+        let map[5] = Math.multiply(f, 257);
+        let map[6] = Math.multiply(g, 257);
+        let map[7] = Math.multiply(h, 257);
+        let map[8] = Math.multiply(i, 257);
+        let map[9] = Math.multiply(j, 257);
+        let map[10] = Math.multiply(k, 257);
 
         return;
     }
@@ -182,33 +183,81 @@ class Output {
     /** Moves the cursor to the j-th column of the i-th row,
      *  and erases the character displayed there. */
     function void moveCursor(int i, int j) {
-        let cursor[0] = i;
-        let cursor[1] = j;
+        let cursor_row = i;
+        let cursor_col = j;
+        do Output.printChar(32); // blank
         return;
     }
 
     /** Displays the given character at the cursor location,
      *  and advances the cursor one column forward. */
     function void printChar(char c) {
-        var int rowCount, colCount, count;
-        let rowCount = cursor[]
+        var Array map;
+        var int count, word;
+        let count = 0;
+        let map = Output.getMap(c);
+        let word = word_number;
+
+        if (odd) {
+            while (count < 11) {
+                // mask lower byte of value and or with lower byte of char
+                let screen[word] = (screen[word] & 65280) | (map[count] & 255);
+                let word = word + 32;
+                let count = count + 1;
+            }
+        } else {
+            while (count < 11) {
+                // mask upper byte of value and or with upper byte of char
+                let screen[word] = (screen[word] & 255) | (map[count] & 65280);
+                let word = word + 32;
+                let count = count + 1;
+            }
+            let word_number = word_number + 1;
+        }
+        let odd = !odd;
+        return;
     }
 
     /** displays the given string starting at the cursor location,
      *  and advances the cursor appropriately. */
     function void printString(String s) {
+        var int length, count;
+        let length = s[-2];
+        let count = 0;
+        while (count < length) {
+            do printChar(s[count]);
+            let count = count + 1;
+        }
+
+        return;
     }
 
     /** Displays the given integer starting at the cursor location,
      *  and advances the cursor appropriately. */
     function void printInt(int i) {
+        var String value;
+        let value = String.new(8);
+        do value.setInt(i);
+        do Output.printString(value);
+        value.dispose();
+        return;
     }
 
     /** Advances the cursor to the beginning of the next line. */
     function void println() {
+        let line_number = line_number + 11;
+        let word_number = Math.multiply(line_number, 32);
+        let odd = true;
+        return;
     }
 
     /** Moves the cursor one column back. */
+    // TODO: also change line number if required
     function void backSpace() {
+        if (odd) {
+            let word_number = word_number - 1;
+        }
+        let odd = !odd;
+        return;
     }
 }

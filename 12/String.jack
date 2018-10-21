@@ -26,7 +26,7 @@ class String {
     /** Disposes this string. */
     method void dispose() {
         let this = this - 2;
-        let this.dispose();
+        let Memory.dealloc(this);
         return;
     }
 

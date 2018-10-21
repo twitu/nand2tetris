@@ -13,8 +13,8 @@ class Sys {
 
     /** Performs all the initializations required by the OS. */
     function void init() {
-        do KeyBoard.init();
         do Math.init();
+        do KeyBoard.init();
         do Memory.init();
         do Output.init();
         do String.init();
